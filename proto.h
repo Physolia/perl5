@@ -2957,6 +2957,10 @@ PERL_CALLCONV SV*	Perl_reg_named_buff_nextkey(pTHX_ REGEXP * const rx, const U32
 PERL_CALLCONV SV*	Perl_reg_named_buff_scalar(pTHX_ REGEXP * const rx, const U32 flags);
 #define PERL_ARGS_ASSERT_REG_NAMED_BUFF_SCALAR	\
 	assert(rx)
+PERL_CALLCONV regnode*	Perl_reg_nextoper(pTHX_ const regnode* p)
+			__attribute__warn_unused_result__;
+#define PERL_ARGS_ASSERT_REG_NEXTOPER
+
 PERL_CALLCONV void	Perl_reg_numbered_buff_fetch(pTHX_ REGEXP * const rx, const I32 paren, SV * const sv);
 #define PERL_ARGS_ASSERT_REG_NUMBERED_BUFF_FETCH	\
 	assert(rx)

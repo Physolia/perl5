@@ -22559,6 +22559,29 @@ Perl_regnext(pTHX_ regnode *p)
     return(p+offset);
 }
 
+/*
+ - reg_nextoper - find the next node after this one.
+ */
+regnode *
+Perl_reg_nextoper(pTHX_ const regnode *p)
+{
+    I32 offset;
+
+    if (!p) {
+        Perl_croak(aTHX_ "No pointer in reg_nextoper?");
+    }
+
+    if (OP(p) > REGNODE_MAX) {                /* regnode.type is unsigned */
+        Perl_croak(aTHX_ "Corrupted regexp opcode in reg_nextoper: %d > %d",
+                                                (int)OP(p), (int)REGNODE_MAX);
+    }
+
+    offset = 1 + regarglen[OP(p)];
+
+    return (p + offset);
+}
+
+
 #endif
 
 STATIC void
