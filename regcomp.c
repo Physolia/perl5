@@ -22563,22 +22563,16 @@ Perl_regnext(pTHX_ regnode *p)
 regnode *
 Perl_reg_nextoper(pTHX_ const regnode *p)
 {
-    I32 offset;
-
     if (!p) {
         return NULL;
-        Perl_croak(aTHX_ "No pointer in reg_nextoper?");
     }
+    const U8 op = OP(p);
 
-    if (OP(p) > REGNODE_MAX) {                /* regnode.type is unsigned */
+    if (op > REGNODE_MAX) {                /* regnode.type is unsigned */
         return NULL;
-        Perl_croak(aTHX_ "Corrupted regexp opcode in reg_nextoper: %d > %d",
-                                                (int)OP(p), (int)REGNODE_MAX);
     }
 
-    offset = 1 + regarglen[OP(p)];
-
-    return (p + offset);
+    return (p + NODE_STEP_REGNODE + regarglen[op]);
 }
 
 regnode *
@@ -22588,7 +22582,6 @@ Perl_check_reg_nextoper(pTHX_ const regnode *p, const STRLEN extra)
     const regnode *other= p + extra + NODE_STEP_REGNODE;  
     if (nextoper != other) {
         return NULL;
-        Perl_croak(aTHX_ "reg_nextoper not the same");
     }
     return other;
 }
