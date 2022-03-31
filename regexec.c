@@ -8827,11 +8827,11 @@ NULL
             next = scan + ARG(scan);
             if (next == scan)
                 next = NULL;
-            scan = NEXTOPER(scan);
             /* FALLTHROUGH */
 
         case BRANCH:	    /*  /(...|A|...)/ */
-            scan = NEXTOPER(scan); /* scan now points to inner node */
+            scan = NEXTOPER_PLUS(scan,
+                    state_num == BRANCHJ ? NODE_STEP_REGNODE : 0); /* scan now points to inner node */
             ST.lastparen = rex->lastparen;
             ST.lastcloseparen = rex->lastcloseparen;
             ST.next_branch = next;
