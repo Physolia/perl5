@@ -8254,12 +8254,11 @@ Perl_re_op_compile(pTHX_ SV ** const patternp, int pat_count,
                  */
                 if (OP(first) == PLUS)
                     sawplus = 1;
-                else {
-                    if (OP(first) == MINMOD)
-                        sawminmod = 1;
-                    first += regarglen[OP(first)];
-                }
-                first = NEXTOPER(first);
+                else
+                if (OP(first) == MINMOD)
+                    sawminmod = 1;
+
+                first = NEXTOPER_PLUS(first,regarglen[OP(first)]);
                 first_next= regnext(first);
         }
 
