@@ -23416,8 +23416,7 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
         }
         else if (PL_regkind[(U8)op] == EXACT || op == ANYOFHs) {
             /* Literal string, where present. */
-            node += NODE_SZ_STR(node) - 1;
-            node = NEXTOPER(node);
+            node += NODE_SZ_STR(node); /* NOT NEXTOPER! */
         }
         else {
             node = NEXTOPER_PLUS(node,regarglen[(U8)op]);
