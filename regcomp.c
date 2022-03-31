@@ -12574,7 +12574,7 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
 
             /* Append to the previous. */
             shut_gcc_up = REGTAIL(pRExC_state,
-                         REGNODE_OFFSET(NEXTOPER(NEXTOPER(REGNODE_p(lastbr)))),
+                         REGNODE_OFFSET(NEXTOPER2(REGNODE_p(lastbr))),
                          ender);
             PERL_UNUSED_VAR(shut_gcc_up);
         }
