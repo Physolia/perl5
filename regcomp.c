@@ -2928,7 +2928,7 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
         convert = first;
     } else {
         /* branch sub-chain */
-        convert = NEXTOPER( first );
+        convert = NEXTOPERD( first );
     }
 
     /*  -- First loop and Setup --
@@ -2955,7 +2955,7 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
      */
 
     for ( cur = first ; cur < last ; cur = regnext( cur ) ) {
-        regnode *noper = NEXTOPER( cur );
+        regnode *noper = NEXTOPER_PLUS( cur, regarglen[OP(cur)] );
         const U8 *uc;
         const U8 *e;
         int foldlen = 0;
@@ -3184,7 +3184,7 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
 
         for ( cur = first ; cur < last ; cur = regnext( cur ) ) {
 
-            regnode *noper   = NEXTOPER( cur );
+            regnode *noper   = NEXTOPERD( cur );
             U32 state        = 1;         /* required init */
             U16 charid       = 0;         /* sanity init */
             U32 wordlen      = 0;         /* required init */
@@ -3414,7 +3414,7 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
 
         for ( cur = first ; cur < last ; cur = regnext( cur ) ) {
 
-            regnode *noper   = NEXTOPER( cur );
+            regnode *noper   = NEXTOPERD( cur );
 
             U32 state        = 1;         /* required init */
 
@@ -3475,7 +3475,7 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
                  * on a trieable type. So we need to reset noper back to point at the first regop
                  * in the branch before we call TRIE_HANDLE_WORD().
                 */
-                noper= NEXTOPER(cur);
+                noper= NEXTOPERD(cur);
             }
             accept_state = TRIE_NODENUM( state );
             TRIE_HANDLE_WORD(accept_state);
@@ -4817,7 +4817,7 @@ S_study_chunk(pTHX_
                     data_fake.pos_delta = delta;
                     next = regnext(scan);
 
-                    scan = NEXTOPER_PLUS(scan, (code != BRANCH) ? NODE_STEP_REGNODE : 0);
+                    scan = NEXTOPER_PLUS(scan, regarglen[code]);
 
                     if (flags & SCF_DO_STCLASS) {
                         ssc_init(pRExC_state, &this_class);
@@ -5061,7 +5061,7 @@ S_study_chunk(pTHX_
 
                         /* dont use tail as the end marker for this traverse */
                         for ( cur = startbranch ; cur != scan ; cur = regnext( cur ) ) {
-                            regnode * const noper = NEXTOPER( cur );
+                            regnode * const noper = NEXTOPER_PLUS( cur, regarglen[OP(cur)] );
                             U8 noper_type = OP( noper );
                             U8 noper_trietype = TRIE_TYPE( noper_type );
 #if defined(DEBUGGING) || defined(NOJUMPTRIE)
@@ -5239,10 +5239,8 @@ S_study_chunk(pTHX_
                 } /* do trie */
 
             }
-            else if ( code == BRANCHJ ) {  /* single branch is optimized. */
-                scan = NEXTOPER2(scan);
-            } else			/* single branch is optimized. */
-                scan = NEXTOPER(scan);
+            else 
+                scan = NEXTOPER_OPCODE(scan,code);
             continue;
         } else if (OP(scan) == SUSPEND || OP(scan) == GOSUB) {
             I32 paren = 0;
@@ -12573,7 +12571,7 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
 
             /* Append to the previous. */
             shut_gcc_up = REGTAIL(pRExC_state,
-                         REGNODE_OFFSET(NEXTOPER2(REGNODE_p(lastbr))),
+                         REGNODE_OFFSET(NEXTOPERD(REGNODE_p(lastbr))),
                          ender);
             PERL_UNUSED_VAR(shut_gcc_up);
         }
@@ -12677,20 +12675,21 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
             /* Hook the tails of the branches to the closing node. */
             for (br = REGNODE_p(ret); br; br = regnext(br)) {
                 const U8 op = PL_regkind[OP(br)];
+                regnode *nextoper = NEXTOPER_PLUS(br,regarglen[OP(br)]);
                 if (op == BRANCH) {
                     if (! REGTAIL_STUDY(pRExC_state,
-                                        REGNODE_OFFSET(NEXTOPER(br)),
+                                        REGNODE_OFFSET(nextoper),
                                         ender))
                     {
                         REQUIRE_BRANCHJ(flagp, 0);
                     }
-                    if ( OP(NEXTOPER(br)) != NOTHING
-                         || regnext(NEXTOPER(br)) != REGNODE_p(ender))
+                    if ( OP(nextoper) != NOTHING
+                         || regnext(nextoper) != REGNODE_p(ender))
                         is_nothing= 0;
                 }
                 else if (op == BRANCHJ) {
                     bool shut_gcc_up = REGTAIL_STUDY(pRExC_state,
-                                        REGNODE_OFFSET(NEXTOPER2(br)),
+                                        REGNODE_OFFSET(nextoper),
                                         ender);
                     PERL_UNUSED_VAR(shut_gcc_up);
                     /* for now we always disable this optimisation * /
@@ -12817,9 +12816,9 @@ S_regbranch(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, I32 first, U32 depth)
         ret = 0;
     else {
         if (RExC_use_BRANCHJ)
-            ret = reganode(pRExC_state, BRANCHJ, 0);
+            ret = reg2Lanode(pRExC_state, BRANCHJ, 0, RExC_npar-1);
         else {
-            ret = reg_node(pRExC_state, BRANCH);
+            ret = reganode(pRExC_state, BRANCH, RExC_npar-1);
         }
     }
 
@@ -23303,7 +23302,7 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
         next = regnext((regnode *)node);
 
         /* Where, what. */
-        if (OP(node) == OPTIMIZED) {
+        if (op == OPTIMIZED) {
             if (!optstart && RE_DEBUG_FLAG(RE_DEBUG_COMPILE_OPTIMISE))
                 optstart = node;
             else
@@ -23315,7 +23314,7 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
         Perl_re_printf( aTHX_  "%4" IVdf ":%*s%s", (IV)(node - start),
                       (int)(2*indent + 1), "", SvPVX_const(sv));
 
-        if (OP(node) != OPTIMIZED) {
+        if (op != OPTIMIZED) {
             if (next == NULL)		/* Next ptr. */
                 Perl_re_printf( aTHX_  " (0)");
             else if (PL_regkind[(U8)op] == BRANCH
@@ -23323,6 +23322,15 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
                 Perl_re_printf( aTHX_  " (FAIL)");
             else
                 Perl_re_printf( aTHX_  " (%" IVdf ")", (IV)(next - start));
+            if (op == BRANCH)  {
+                if (ARG(node))
+                    Perl_re_printf( aTHX_ " (buf:%" IVdf ")", (IV)ARG(node) );
+            }
+            else
+            if (op == BRANCHJ) {
+                if (ARG2L(node))
+                    Perl_re_printf( aTHX_ " (buf:%" IVdf ")", (IV)ARG2L(node) );
+            }
             Perl_re_printf( aTHX_ "\n");
         }
 
@@ -23335,12 +23343,12 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
                                        : next);
                 if (last && nnode > last)
                     nnode = last;
-                DUMPUNTIL(NEXTOPER2(node), nnode);
+                DUMPUNTIL(NEXTOPER_OPCODE(node,op), nnode);
             }
         }
         else if (PL_regkind[(U8)op] == BRANCH) {
             assert(next);
-            DUMPUNTIL(NEXTOPER(node), next);
+            DUMPUNTIL(NEXTOPER_OPCODE(node,op), next);
         }
         else if ( PL_regkind[(U8)op]  == TRIE ) {
             const regnode *this_trie = node;

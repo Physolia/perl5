@@ -1641,7 +1641,7 @@ static const U8 regarglen[] = {
 	0,                                   	/* NPOSIXU      */
 	0,                                   	/* NPOSIXA      */
 	0,                                   	/* CLUMP        */
-	0,                                   	/* BRANCH       */
+	EXTRA_SIZE(struct regnode_1),        	/* BRANCH       */
 	0,                                   	/* EXACT        */
 	EXTRA_SIZE(struct regnode_1),        	/* LEXACT       */
 	0,                                   	/* EXACTL       */
@@ -1685,7 +1685,7 @@ static const U8 regarglen[] = {
 	EXTRA_SIZE(struct regnode_1),        	/* REFFUN       */
 	EXTRA_SIZE(struct regnode_1),        	/* REFFAN       */
 	EXTRA_SIZE(struct regnode_1),        	/* LONGJMP      */
-	EXTRA_SIZE(struct regnode_1),        	/* BRANCHJ      */
+	EXTRA_SIZE(struct regnode_2L),       	/* BRANCHJ      */
 	EXTRA_SIZE(struct regnode_1),        	/* IFMATCH      */
 	EXTRA_SIZE(struct regnode_1),        	/* UNLESSM      */
 	EXTRA_SIZE(struct regnode_1),        	/* SUSPEND      */

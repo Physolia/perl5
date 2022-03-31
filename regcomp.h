@@ -375,6 +375,8 @@ struct regnode_ssc {
 #define NEXTOPER_PLUS(p,extra) _NEXTOPER_PLUS_DEBUG(p,extra)
 #define	NEXTOPER(p)	NEXTOPER_PLUS(p,0)
 #define	NEXTOPER2(p)	NEXTOPER_PLUS(p,NODE_STEP_REGNODE)
+#define NEXTOPER_OPCODE(p,op)    NEXTOPER_PLUS(p,regarglen[op])
+#define NEXTOPERD(p)    NEXTOPER_OPCODE(p,OP(p))
 
 #define	PREVOPER(p)	((p) - NODE_STEP_REGNODE)
 
