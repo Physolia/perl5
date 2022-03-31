@@ -8607,13 +8607,15 @@ Perl_re_op_compile(pTHX_ SV ** const patternp, int pat_count,
          * flags appropriately - Yves */
         regnode *first = RExC_rxi->program + 1;
         U8 fop = OP(first);
-        regnode *next = NEXTOPER(first);
+        regnode *next = NULL;
+        U8 nop = 0;
+        if (fop == NOTHING || fop == MBOL || fop == SBOL || fop == PLUS) {
+            next = NEXTOPER(first);
+            nop = OP(next);
+        }
         /* It's safe to read through *next only if OP(first) is a regop of
          * the right type (not EXACT, for example).
          */
-        U8 nop = (fop == NOTHING || fop == MBOL || fop == SBOL || fop == PLUS)
-                ? OP(next) : 0;
-
         if (PL_regkind[fop] == NOTHING && nop == END)
             RExC_rx->extflags |= RXf_NULL;
         else if ((fop == MBOL || (fop == SBOL && !first->flags)) && nop == END)
@@ -21074,7 +21076,7 @@ S_reginsert(pTHX_ RExC_state_t *pRExC_state, const U8 op,
     }
 
     place = REGNODE_p(operand);	/* Op node, where operand used to be. */
-    src = NEXTOPER(place);
+    src = place + 1; /* NOT NEXTOPER! */
     FLAGS(place) = 0;
     FILL_NODE(operand, op);
 
