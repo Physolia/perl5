@@ -23420,8 +23420,7 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
             node = NEXTOPER(node);
         }
         else {
-            node = NEXTOPER(node);
-            node += regarglen[(U8)op];
+            node = NEXTOPER_PLUS(node,regarglen[(U8)op]);
         }
         if (op == CURLYX || op == OPEN || op == SROPEN)
             indent++;
