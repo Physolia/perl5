@@ -202,11 +202,11 @@ static const char non_utf8_target_but_utf8_required[]
     while (JUMPABLE(rn)) { \
         const OPCODE type = OP(rn); \
         if (type == SUSPEND || PL_regkind[type] == CURLY) \
-            rn = NEXTOPER(NEXTOPER(rn)); \
+            rn = NEXTOPER2(rn); \
         else if (type == PLUS) \
             rn = NEXTOPER(rn); \
         else if (type == IFMATCH) \
-            rn = (rn->flags == 0) ? NEXTOPER(NEXTOPER(rn)) : rn + ARG(rn); \
+            rn = (rn->flags == 0) ? NEXTOPER2(rn) : rn + ARG(rn); \
         else rn += NEXT_OFF(rn); \
     } \
 } STMT_END
@@ -8439,11 +8439,11 @@ S_regmatch(pTHX_ regmatch_info *reginfo, char *startpos, regnode *prog)
         case IFTHEN:   /*  (?(cond)A|B)  */
             reginfo->poscache_iter = reginfo->poscache_maxiter; /* Void cache */
             if (sw)
-                next = NEXTOPER(NEXTOPER(scan));
+                next = NEXTOPER2(scan);
             else {
                 next = scan + ARG(scan);
                 if (OP(next) == IFTHEN) /* Fake one. */
-                    next = NEXTOPER(NEXTOPER(next));
+                    next = NEXTOPER2(next);
             }
             break;
 
@@ -8595,7 +8595,7 @@ NULL
 
             min = ARG1(cur_curlyx->u.curlyx.me);
             max = ARG2(cur_curlyx->u.curlyx.me);
-            A = NEXTOPER(cur_curlyx->u.curlyx.me) + EXTRA_STEP_2ARGS;
+            A = NEXTOPER_PLUS(cur_curlyx->u.curlyx.me, EXTRA_STEP_2ARGS);
             n = ++cur_curlyx->u.curlyx.count; /* how many A's matched */
             ST.save_lastloc = cur_curlyx->u.curlyx.lastloc;
             ST.cache_offset = 0;
@@ -8816,7 +8816,7 @@ NULL
                             maxopenparen);
             REGCP_SET(ST.lastcp);
             PUSH_STATE_GOTO(WHILEM_A_min,
-                /*A*/ NEXTOPER(ST.save_curlyx->u.curlyx.me) + EXTRA_STEP_2ARGS,
+                /*A*/ NEXTOPER_PLUS(ST.save_curlyx->u.curlyx.me, EXTRA_STEP_2ARGS),
                 locinput, loceol, script_run_begin);
             NOT_REACHED; /* NOTREACHED */
 
@@ -8904,7 +8904,7 @@ NULL
              */
 
             ST.me = scan;
-            scan = NEXTOPER(scan) + NODE_STEP_REGNODE;
+            scan = NEXTOPER_PLUS(scan, NODE_STEP_REGNODE);
 
             ST.lastparen      = rex->lastparen;
             ST.lastcloseparen = rex->lastcloseparen;
@@ -9093,7 +9093,7 @@ NULL
                 maxopenparen = ST.paren;
             ST.min = ARG1(scan);  /* min to match */
             ST.max = ARG2(scan);  /* max to match */
-            scan = regnext(NEXTOPER(scan) + NODE_STEP_REGNODE);
+            scan = regnext(NEXTOPER_PLUS(scan, NODE_STEP_REGNODE));
 
             /* handle the single-char capture called as a GOSUB etc */
             if (EVAL_CLOSE_PAREN_IS_TRUE(cur_eval,(U32)ST.paren))
@@ -9111,7 +9111,7 @@ NULL
             ST.paren = 0;
             ST.min = ARG1(scan);  /* min to match */
             ST.max = ARG2(scan);  /* max to match */
-            scan = NEXTOPER(scan) + NODE_STEP_REGNODE;
+            scan = NEXTOPER_PLUS(scan, NODE_STEP_REGNODE);
           repeat:
             /*
             * Lookahead to avoid useless match attempts
@@ -9505,7 +9505,7 @@ NULL
             logical = 0; /* XXX: reset state of logical once it has been saved into ST */
 
             /* execute body of (?...A) */
-            PUSH_YES_STATE_GOTO(IFMATCH_A, NEXTOPER(NEXTOPER(scan)), ST.start,
+            PUSH_YES_STATE_GOTO(IFMATCH_A, NEXTOPER2(scan), ST.start,
                                 ST.end, script_run_begin);
             NOT_REACHED; /* NOTREACHED */
 

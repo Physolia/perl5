@@ -370,7 +370,10 @@ struct regnode_ssc {
 #define NODE_STEP_REGNODE	1	/* sizeof(regnode)/sizeof(regnode) */
 #define EXTRA_STEP_2ARGS	EXTRA_SIZE(struct regnode_2)
 
-#define	NEXTOPER(p)	((p) + NODE_STEP_REGNODE)
+#define	NEXTOPER_PLUS(p,extra)	((p) + NODE_STEP_REGNODE + (extra))
+#define	NEXTOPER(p)	NEXTOPER_PLUS(p,0)
+#define	NEXTOPER2(p)	NEXTOPER_PLUS(p,NODE_STEP_REGNODE)
+
 #define	PREVOPER(p)	((p) - NODE_STEP_REGNODE)
 
 #define FILL_NODE(offset, op)                                           \

@@ -4752,7 +4752,7 @@ S_study_chunk(pTHX_
             data_fake.last_close_opp= &fake_last_close_op;
             minlen = *minlenp;
             next = regnext(scan);
-            scan = NEXTOPER(NEXTOPER(scan));
+            scan = NEXTOPER2(scan);
             DEBUG_PEEP("scan", scan, depth, flags);
             DEBUG_PEEP("next", next, depth, flags);
 
@@ -5242,7 +5242,7 @@ S_study_chunk(pTHX_
 
             }
             else if ( code == BRANCHJ ) {  /* single branch is optimized. */
-                scan = NEXTOPER(NEXTOPER(scan));
+                scan = NEXTOPER2(scan);
             } else			/* single branch is optimized. */
                 scan = NEXTOPER(scan);
             continue;
@@ -5612,7 +5612,7 @@ S_study_chunk(pTHX_
                     I32 lp = (data ? *(data->last_closep) : 0);
                     scan->flags = ((lp <= (I32)U8_MAX) ? (U8)lp : U8_MAX);
                 }
-                scan = NEXTOPER(scan) + EXTRA_STEP_2ARGS;
+                scan = NEXTOPER_PLUS(scan, EXTRA_STEP_2ARGS);
                 next_is_eval = (OP(scan) == EVAL);
               do_curly:
                 if (flags & SCF_DO_SUBSTR) {
@@ -5723,7 +5723,7 @@ S_study_chunk(pTHX_
                       && mutate_ok
                 ) {
                     /* Try to optimize to CURLYN.  */
-                    regnode *nxt = NEXTOPER(oscan) + EXTRA_STEP_2ARGS;
+                    regnode *nxt = NEXTOPER_PLUS(oscan, EXTRA_STEP_2ARGS);
                     regnode * const nxt1 = nxt;
 #ifdef DEBUGGING
                     regnode *nxt2;
@@ -5778,7 +5778,7 @@ S_study_chunk(pTHX_
                 ) {
                     /* XXXX How to optimize if data == 0? */
                     /* Optimize to a simpler form.  */
-                    regnode *nxt = NEXTOPER(oscan) + EXTRA_STEP_2ARGS; /* OPEN */
+                    regnode *nxt = NEXTOPER_PLUS(oscan, EXTRA_STEP_2ARGS); /* OPEN */
                     regnode *nxt2;
 
                     OP(oscan) = CURLYM;
@@ -5789,7 +5789,7 @@ S_study_chunk(pTHX_
                     /* Need to optimize away parenths. */
                     if ((data->flags & SF_IN_PAR) && OP(nxt) == CLOSE) {
                         /* Set the parenth number.  */
-                        regnode *nxt1 = NEXTOPER(oscan) + EXTRA_STEP_2ARGS; /* OPEN*/
+                        regnode *nxt1 = NEXTOPER_PLUS(oscan, EXTRA_STEP_2ARGS); /* OPEN*/
 
                         oscan->flags = (U8)ARG(nxt);
                         if (RExC_open_parens) {
@@ -6267,7 +6267,7 @@ S_study_chunk(pTHX_
                 if (flags & SCF_WHILEM_VISITED_POS)
                     f |= SCF_WHILEM_VISITED_POS;
                 next = regnext(scan);
-                nscan = NEXTOPER(NEXTOPER(scan));
+                nscan = NEXTOPER2(scan);
 
                 /* recurse study_chunk() for lookahead body */
                 minnext = study_chunk(pRExC_state, &nscan, minlenp, &deltanext,
@@ -6385,7 +6385,7 @@ S_study_chunk(pTHX_
                 if (flags & SCF_WHILEM_VISITED_POS)
                     f |= SCF_WHILEM_VISITED_POS;
                 next = regnext(scan);
-                nscan = NEXTOPER(NEXTOPER(scan));
+                nscan = NEXTOPER2(scan);
 
                 /* positive lookahead study_chunk() recursion */
                 *minnextp = study_chunk(pRExC_state, &nscan, minnextp,
@@ -12692,12 +12692,12 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
                 }
                 else if (op == BRANCHJ) {
                     bool shut_gcc_up = REGTAIL_STUDY(pRExC_state,
-                                        REGNODE_OFFSET(NEXTOPER(NEXTOPER(br))),
+                                        REGNODE_OFFSET(NEXTOPER2(br)),
                                         ender);
                     PERL_UNUSED_VAR(shut_gcc_up);
                     /* for now we always disable this optimisation * /
-                    if ( OP(NEXTOPER(NEXTOPER(br))) != NOTHING
-                         || regnext(NEXTOPER(NEXTOPER(br))) != REGNODE_p(ender))
+                    if ( OP(NEXTOPER2(br)) != NOTHING
+                         || regnext(NEXTOPER2(br)) != REGNODE_p(ender))
                     */
                         is_nothing= 0;
                 }
@@ -23340,7 +23340,7 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
                                        : next);
                 if (last && nnode > last)
                     nnode = last;
-                DUMPUNTIL(NEXTOPER(NEXTOPER(node)), nnode);
+                DUMPUNTIL(NEXTOPER2(node), nnode);
             }
         }
         else if (PL_regkind[(U8)op] == BRANCH) {
@@ -23401,12 +23401,12 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
                 node= next;
         }
         else if ( op == CURLY ) {   /* "next" might be very big: optimizer */
-            DUMPUNTIL(NEXTOPER(node) + EXTRA_STEP_2ARGS,
-                    NEXTOPER(node) + EXTRA_STEP_2ARGS + 1);
+            DUMPUNTIL(NEXTOPER_PLUS(node, EXTRA_STEP_2ARGS),
+                    NEXTOPER_PLUS(node, EXTRA_STEP_2ARGS) + 1);
         }
         else if (PL_regkind[(U8)op] == CURLY && op != CURLYX) {
             assert(next);
-            DUMPUNTIL(NEXTOPER(node) + EXTRA_STEP_2ARGS, next);
+            DUMPUNTIL(NEXTOPER_PLUS(node, EXTRA_STEP_2ARGS), next);
         }
         else if ( op == PLUS || op == STAR) {
             DUMPUNTIL(NEXTOPER(node), NEXTOPER(node) + 1);
