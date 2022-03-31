@@ -1194,6 +1194,8 @@ typedef enum {
                                   (LOWEST_ANYOF_HRx_BYTE(b)                 \
           + ((MAX_ANYOF_HRx_BYTE - LOWEST_ANYOF_HRx_BYTE(b)) >> ((b) & 3)))
 
+#define CHECK_NEXTOPER(from_regop,current_result) Perl_check_reg_nextoper(aTHX_ from_regop, current_result)
+
 #endif /* PERL_REGCOMP_H_ */
 
 /*

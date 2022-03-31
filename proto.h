@@ -420,6 +420,10 @@ PERL_CALLCONV UV	Perl_cast_uv(NV f)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_CAST_UV
 
+PERL_CALLCONV regnode*	Perl_check_reg_nextoper(pTHX_ const regnode* p, const regnode* other)
+			__attribute__warn_unused_result__;
+#define PERL_ARGS_ASSERT_CHECK_REG_NEXTOPER
+
 PERL_CALLCONV bool	Perl_check_utf8_print(pTHX_ const U8 *s, const STRLEN len);
 #define PERL_ARGS_ASSERT_CHECK_UTF8_PRINT	\
 	assert(s)

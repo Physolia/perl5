@@ -88,6 +88,7 @@
 #define cast_iv			Perl_cast_iv
 #define cast_ulong		Perl_cast_ulong
 #define cast_uv			Perl_cast_uv
+#define check_reg_nextoper(a,b)	Perl_check_reg_nextoper(aTHX_ a,b)
 #define ck_entersub_args_list(a)	Perl_ck_entersub_args_list(aTHX_ a)
 #define ck_entersub_args_proto(a,b,c)	Perl_ck_entersub_args_proto(aTHX_ a,b,c)
 #define ck_entersub_args_proto_or_list(a,b,c)	Perl_ck_entersub_args_proto_or_list(aTHX_ a,b,c)

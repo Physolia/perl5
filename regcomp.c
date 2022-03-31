@@ -22581,6 +22581,16 @@ Perl_reg_nextoper(pTHX_ const regnode *p)
     return (p + offset);
 }
 
+regnode *
+Perl_check_reg_nextoper(pTHX_ const regnode *p, const regnode *other)
+{
+    const regnode *nextoper= reg_nextoper(p);
+    if (nextoper != other) {
+        Perl_croak(aTHX_ "reg_nextoper not the same");
+    }
+    return other;
+}
+
 
 #endif
 
