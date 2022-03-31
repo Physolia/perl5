@@ -420,7 +420,7 @@ PERL_CALLCONV UV	Perl_cast_uv(NV f)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_CAST_UV
 
-PERL_CALLCONV regnode*	Perl_check_reg_nextoper(pTHX_ const regnode* p, const regnode* other)
+PERL_CALLCONV regnode*	Perl_check_reg_nextoper(pTHX_ const regnode* p, const STRLEN extra)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_CHECK_REG_NEXTOPER
 
