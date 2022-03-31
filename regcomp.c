@@ -4817,9 +4817,7 @@ S_study_chunk(pTHX_
                     data_fake.pos_delta = delta;
                     next = regnext(scan);
 
-                    scan = NEXTOPER(scan); /* everything */
-                    if (code != BRANCH)    /* everything but BRANCH */
-                        scan = NEXTOPER(scan);
+                    scan = NEXTOPER_PLUS(scan, (code != BRANCH) ? NODE_STEP_REGNODE : 0);
 
                     if (flags & SCF_DO_STCLASS) {
                         ssc_init(pRExC_state, &this_class);
