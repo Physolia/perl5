@@ -3803,10 +3803,10 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
              */
             if ( !trie->states[trie->startstate].wordnum
                  && trie->bitmap
-                 && ( (char *)jumper - (char *)convert) >= (int)sizeof(struct regnode_charclass) )
+                 && ( (char *)jumper - (char *)convert) >= (int)sizeof(tregnode_TRIEC) )
             {
                 OP( convert ) = TRIEC;
-                Copy(trie->bitmap, ((struct regnode_charclass *)convert)->bitmap, ANYOF_BITMAP_SIZE, char);
+                Copy(trie->bitmap, ((tregnode_TRIEC *)convert)->bitmap, ANYOF_BITMAP_SIZE, char);
                 PerlMemShared_free(trie->bitmap);
                 trie->bitmap= NULL;
             } else
@@ -3933,14 +3933,14 @@ S_construct_ahocorasick_from_trie(pTHX_ RExC_state_t *pRExC_state, regnode *sour
 #endif
 
     if ( OP(source) == TRIE ) {
-        struct regnode_1 *op = (struct regnode_1 *)
-            PerlMemShared_calloc(1, sizeof(struct regnode_1));
-        StructCopy(source, op, struct regnode_1);
+        tregnode_TRIE *op = (tregnode_TRIE *)
+            PerlMemShared_calloc(1, sizeof(tregnode_TRIE));
+        StructCopy(source, op, tregnode_TRIE);
         stclass = (regnode *)op;
     } else {
-        struct regnode_charclass *op = (struct regnode_charclass *)
-            PerlMemShared_calloc(1, sizeof(struct regnode_charclass));
-        StructCopy(source, op, struct regnode_charclass);
+        tregnode_TRIEC *op = (tregnode_TRIEC *)
+            PerlMemShared_calloc(1, sizeof(tregnode_TRIEC));
+        StructCopy(source, op, tregnode_TRIEC);
         stclass = (regnode *)op;
     }
     OP(stclass)+=2; /* convert the TRIE type to its AHO-CORASICK equivalent */
