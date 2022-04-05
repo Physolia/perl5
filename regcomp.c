@@ -2877,6 +2877,8 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
     STRLEN trie_charcount=0;
 #endif
     SV *re_trie_maxbuff;
+    I32 npar = OP(first) == BRANCH ? (I32)ARG(first)
+                                   : ARG2L(first); /* BRANCHJ */
     DECLARE_AND_GET_RE_DEBUG_FLAGS;
 
     PERL_ARGS_ASSERT_MAKE_TRIE;
@@ -3633,6 +3635,10 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
 #ifdef DEBUGGING
         regnode *optimize = NULL;
 #endif /* DEBUGGING */
+        /* make sure we have enough room to inject the TRIE op */
+        assert((!trie->jump) || !trie->jump[1] ||
+                (trie->jump[1] >= (sizeof(tregnode_TRIE)/sizeof(struct regnode))));
+
         /*
            This means we convert either the first branch or the first Exact,
            depending on whether the thing following (in 'last') is a branch
@@ -3801,6 +3807,7 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
              * then convert the TRIE node into a TRIEC node, with the bitmap
              * embedded inline in the opcode - this is hypothetically faster.
              */
+            trie->npar = npar;
             if ( !trie->states[trie->startstate].wordnum
                  && trie->bitmap
                  && ( (char *)jumper - (char *)convert) >= (int)sizeof(tregnode_TRIEC) )
@@ -4939,7 +4946,7 @@ S_study_chunk(pTHX_
                   common prefix, which gets split out into an EXACT like node
                   preceding the TRIE node.
 
-                  If x(1..n)==tail then we can do a simple trie, if not we make
+                  If X(1..n)==tail then we can do a simple trie, if not we make
                   a "jump" trie, such that when we match the appropriate word
                   we "jump" to the appropriate tail node. Essentially we turn
                   a nested if into a case structure of sorts.
@@ -20882,7 +20889,7 @@ S_change_engine_size(pTHX_ RExC_state_t *pRExC_state, const Ptrdiff_t size)
     RExC_size += size;
 
     Renewc(RExC_rxi,
-           sizeof(regexp_internal) + (RExC_size + 1) * sizeof(regnode),
+           sizeof(regexp_internal) + (RExC_size + 1) * sizeof(struct regnode),
                                                 /* +1 for REG_MAGIC */
            char,
            regexp_internal);
@@ -21497,7 +21504,8 @@ void
 Perl_regprop(pTHX_ const regexp *prog, SV *sv, const regnode *o, const regmatch_info *reginfo, const RExC_state_t *pRExC_state)
 {
 #ifdef DEBUGGING
-    int k;
+    U8 k;
+    const U8 op = OP(o);
     RXi_GET_DECL(prog, progi);
     DECLARE_AND_GET_RE_DEBUG_FLAGS;
 
@@ -21505,21 +21513,27 @@ Perl_regprop(pTHX_ const regexp *prog, SV *sv, const regnode *o, const regmatch_
 
     SvPVCLEAR(sv);
 
-    if (OP(o) > REGNODE_MAX) {          /* regnode.type is unsigned */
+    if (op > REGNODE_MAX) {          /* regnode.type is unsigned */
         if (pRExC_state) {  /* This gives more info, if we have it */
             FAIL3("panic: corrupted regexp opcode %d > %d",
-                  (int)OP(o), (int)REGNODE_MAX);
+                  (int)op, (int)REGNODE_MAX);
         }
         else {
             Perl_croak(aTHX_ "panic: corrupted regexp opcode %d > %d",
-                             (int)OP(o), (int)REGNODE_MAX);
+                             (int)op, (int)REGNODE_MAX);
         }
     }
-    sv_catpv(sv, PL_reg_name[OP(o)]); /* Take off const! */
+    sv_catpv(sv, PL_reg_name[op]); /* Take off const! */
 
-    k = PL_regkind[OP(o)];
+    k = PL_regkind[op];
 
-    if (k == EXACT) {
+    if (op == BRANCH) {
+        Perl_sv_catpvf(aTHX_ sv, " (buf:%" IVdf ")", (IV)ARG(o));
+    }
+    else if (op == BRANCHJ) {
+        Perl_sv_catpvf(aTHX_ sv, " (buf:%" IVdf ")", (IV)ARG2L(o));
+    }
+    else if (k == EXACT) {
         sv_catpvs(sv, " ");
         /* Using is_utf8_string() (via PERL_PV_UNI_DETECT)
          * is a crude hack but it may be the best for now since
@@ -21536,7 +21550,6 @@ Perl_regprop(pTHX_ const regexp *prog, SV *sv, const regnode *o, const regmatch_
     } else if (k == TRIE) {
         /* print the details of the trie in dumpuntil instead, as
          * progi->data isn't available here */
-        const char op = OP(o);
         const U32 n = ARG(o);
         const reg_ac_data * const ac = IS_TRIE_AC(op) ?
                (reg_ac_data *)progi->data->data[n] :
@@ -21558,6 +21571,9 @@ Perl_regprop(pTHX_ const regexp *prog, SV *sv, const regnode *o, const regmatch_
             (UV)TRIE_CHARCOUNT(trie),
             (UV)trie->uniquecharcount
           );
+          if (trie->npar) 
+              Perl_sv_catpvf(aTHX_ sv, " (buf:%" IVdf ")", (IV)trie->npar);
+
         });
         if ( IS_ANYOF_TRIE(op) || trie->bitmap ) {
             sv_catpvs(sv, "[");
@@ -22424,7 +22440,7 @@ Perl_regdupe_internal(pTHX_ REGEXP * const rx, CLONE_PARAMS *param)
 
     len = ProgLen(ri);
 
-    Newxc(reti, sizeof(regexp_internal) + len*sizeof(regnode),
+    Newxc(reti, sizeof(regexp_internal) + len*sizeof(struct regnode),
           char, regexp_internal);
     Copy(ri->program, reti->program, len+1, regnode);
 
@@ -23322,15 +23338,6 @@ S_dumpuntil(pTHX_ const regexp *r, const regnode *start, const regnode *node,
                 Perl_re_printf( aTHX_  " (FAIL)");
             else
                 Perl_re_printf( aTHX_  " (%" IVdf ")", (IV)(next - start));
-            if (op == BRANCH)  {
-                if (ARG(node))
-                    Perl_re_printf( aTHX_ " (buf:%" IVdf ")", (IV)ARG(node) );
-            }
-            else
-            if (op == BRANCHJ) {
-                if (ARG2L(node))
-                    Perl_re_printf( aTHX_ " (buf:%" IVdf ")", (IV)ARG2L(node) );
-            }
             Perl_re_printf( aTHX_ "\n");
         }
 
