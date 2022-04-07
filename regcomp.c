@@ -22576,7 +22576,7 @@ Perl_regnext(pTHX_ regnode *p)
  - reg_nextoper - find the next node after this one.
  */
 regnode *
-Perl_reg_nextoper(pTHX_ const regnode *p)
+Perl_reg_nextoper(pTHX_ regnode *p)
 {
     if (!p) {
         return NULL;
@@ -22590,15 +22590,15 @@ Perl_reg_nextoper(pTHX_ const regnode *p)
     return (p + NODE_STEP_REGNODE + regarglen[op]);
 }
 
-regnode *
+bool
 Perl_check_reg_nextoper(pTHX_ const regnode *p, const STRLEN extra)
 {
-    const regnode *nextoper= reg_nextoper(p);
-    const regnode *other= p + extra + NODE_STEP_REGNODE;  
+    const regnode *nextoper= reg_nextoper((regnode *)p);
+    const regnode *other= _NEXTOPER_PLUS(p, extra);
     if (nextoper != other) {
-        return NULL;
+        return FALSE;
     }
-    return other;
+    return TRUE;
 }
 
 
