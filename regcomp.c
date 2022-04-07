@@ -2877,8 +2877,6 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
     STRLEN trie_charcount=0;
 #endif
     SV *re_trie_maxbuff;
-    I32 npar = OP(first) == BRANCH ? (I32)ARG(first)
-                                   : ARG2L(first); /* BRANCHJ */
     DECLARE_AND_GET_RE_DEBUG_FLAGS;
 
     PERL_ARGS_ASSERT_MAKE_TRIE;
@@ -2900,6 +2898,9 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
     trie->refcount = 1;
     trie->startstate = 1;
     trie->wordcount = word_count;
+    trie->npar = OP(first) == BRANCH
+                 ? (I32)ARG(first)
+                 : ARG2L(first); /* BRANCHJ */
     RExC_rxi->data->data[ data_slot ] = (void*)trie;
     trie->charmap = (U16 *) PerlMemShared_calloc( 256, sizeof(U16) );
     if (flags == EXACT || flags == EXACT_REQ8 || flags == EXACTL)
@@ -3807,7 +3808,6 @@ S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch,
              * then convert the TRIE node into a TRIEC node, with the bitmap
              * embedded inline in the opcode - this is hypothetically faster.
              */
-            trie->npar = npar;
             if ( !trie->states[trie->startstate].wordnum
                  && trie->bitmap
                  && ( (char *)jumper - (char *)convert) >= (int)sizeof(tregnode_TRIEC) )
@@ -11472,6 +11472,7 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
      * the pattern that we parse out started. */
     char * segment_parse_start = RExC_parse;
 
+
     DECLARE_AND_GET_RE_DEBUG_FLAGS;
 
     PERL_ARGS_ASSERT_REG;
@@ -12541,6 +12542,7 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
    parse_rest:
     /* Pick up the branches, linking them together. */
     segment_parse_start = RExC_parse;
+    I32 npar_before_regbranch = RExC_npar - 1;
     br = regbranch(pRExC_state, &flags, 1, depth+1);
 
     /*     branch_len = (paren != 0); */
@@ -12552,9 +12554,11 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
     if (*RExC_parse == '|') {
         if (RExC_use_BRANCHJ) {
             reginsert(pRExC_state, BRANCHJ, br, depth+1);
+            ARG2L_SET(REGNODE_p(br), npar_before_regbranch);
         }
         else {
             reginsert(pRExC_state, BRANCH, br, depth+1);
+            ARG_SET(REGNODE_p(br), (U32)npar_before_regbranch);
         }
         have_branch = 1;
     }
@@ -21015,7 +21019,7 @@ S_reg2Lanode(pTHX_ RExC_state_t *pRExC_state, const U8 op, const U32 arg1, const
 * set up NEXT_OFF() of the inserted node if needed. Something like this:
 *
 *   reginsert(pRExC, OPFAIL, orig_emit, depth+1);
-*   NEXT_OFF(orig_emit) = regarglen[OPFAIL] + NODE_STEP_REGNODE;
+*   NEXT_OFF(REGNODE_p(orig_emit)) = regarglen[OPFAIL] + NODE_STEP_REGNODE;
 *
 * ALSO NOTE - FLAGS(newly-inserted-operator) will be set to 0 as well.
 */
@@ -21571,9 +21575,6 @@ Perl_regprop(pTHX_ const regexp *prog, SV *sv, const regnode *o, const regmatch_
             (UV)TRIE_CHARCOUNT(trie),
             (UV)trie->uniquecharcount
           );
-          if (trie->npar) 
-              Perl_sv_catpvf(aTHX_ sv, " (buf:%" IVdf ")", (IV)trie->npar);
-
         });
         if ( IS_ANYOF_TRIE(op) || trie->bitmap ) {
             sv_catpvs(sv, "[");
@@ -21589,6 +21590,8 @@ Perl_regprop(pTHX_ const regexp *prog, SV *sv, const regnode *o, const regmatch_
                                                );
             sv_catpvs(sv, "]");
         }
+        if (trie->npar) 
+            Perl_sv_catpvf(aTHX_ sv, " (buf:%" IVdf ")", (IV)trie->npar);
     } else if (k == CURLY) {
         U32 lo = ARG1(o), hi = ARG2(o);
         if (OP(o) == CURLYM || OP(o) == CURLYN || OP(o) == CURLYX)
