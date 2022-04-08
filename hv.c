@@ -1624,7 +1624,7 @@ S_hsplit(pTHX_ HV *hv, STRLEN const oldsize, STRLEN newsize)
         return;
 
     /* don't share keys in large simple hashes */
-    if (S_large_hash_heuristic(aTHX_ hv, HvTOTALKEYS(hv)))
+    if (LARGE_HASH_HEURISTIC(hv, HvTOTALKEYS(hv)))
         HvSHAREKEYS_off(hv);
 
 
@@ -1720,7 +1720,7 @@ Perl_hv_ksplit(pTHX_ HV *hv, IV newmax)
         }
 #endif
     } else {
-        if (S_large_hash_heuristic(aTHX_ hv, newmax))
+        if (LARGE_HASH_HEURISTIC(hv, newmax))
             HvSHAREKEYS_off(hv);
         Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(newsize), char);
         xhv->xhv_max = newsize - 1;
