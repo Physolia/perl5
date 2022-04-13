@@ -27,6 +27,22 @@ here, but most should go in the L</Performance Enhancements> section.
 
 [ List each enhancement as a =head2 entry ]
 
+=head2 Support for faster, but more memory hungry, hashing.
+
+This release includes support to build Perl so that it does not share
+all keys in hashes as has been historically the case. Using this new
+feature may improve performance. It may also increase memory
+consumption, possibly considerably for some scripts. It may also reduce
+memory consumption in forking applications that build large hash
+tables. This new functionality is disabled by default. You can enable
+it by passing
+
+    -Accflags='-DPERL_USE_UNSHARED_KEYS_IN_LARGE_HASHES'
+
+to F<Configure>. We welcome and encourage people to test this new mode
+and provide feedback on their experience with it so we can make
+decisions about enabling it by default in a future release.
+
 =head1 Security
 
 XXX Any security-related notices go here.  In particular, any security
